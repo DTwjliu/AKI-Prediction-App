@@ -42,7 +42,7 @@ def load_model(model_path):
     return model
 
 # 模型路径
-model_path = "D:/Python/project/CNN/mimic_proj/lightgbm_model.pkl"
+model_path = "lightgbm_model.pkl"
 model = load_model(model_path)
 
 # 定义输入特征（根据模型的特征）
