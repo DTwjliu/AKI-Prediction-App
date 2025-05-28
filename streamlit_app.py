@@ -49,12 +49,12 @@ model = load_model(MODEL_PATH)
 
 # ========== 输入特征设定 ==========
 feature_specs = [
-    ("Weight (kg)", 30.0, 300.0, 80),
-    ("Length of Stay (days)", 1.0, 365.0, 10),
+    ("Weight (kg)", 0.0, 300.0, 80),
+    ("Length of Stay (days)", 0.0, 365.0, 10),
     ("SOFA Score", 0.0, 24.0, 2.0),
-    ("Platelet Count (10^9/L)", 1.0, 1000.0, 300),
-    ("Arterial BP Systolic (mmHg)", 50.0, 250.0, 100),
-    ("SpO2 (%)", 50.0, 100.0, 50),
+    ("Platelet Count (10^9/L)", 0.0, 1000.0, 300),
+    ("Arterial BP Systolic (mmHg)", 0.0, 250.0, 100),
+    ("SpO2 (%)", 0.0, 100.0, 50),
     ("Ventilator (0 = No, 1 = Yes)", 0, 1, 0),
 ]
 
@@ -67,7 +67,6 @@ input_values = []
 for idx, (name, min_v, max_v, default) in enumerate(feature_specs):
     label = name.split("(")[0].strip()
 
-    # 判断是否为整数输入（排除布尔值）
     is_integer_input = all(isinstance(x, int) and not isinstance(x, bool) for x in [min_v, max_v, default])
 
     if is_integer_input:
@@ -95,25 +94,20 @@ input_array = np.array(input_values).reshape(1, -1)
 
 # 主界面 - 预测按钮
 if st.button("🚀 Predict"):
-    # 验证输入：除 SOFA Score 外，其他指标不能为 0
-    invalid = any(input_values[i] == 0 for i in range(len(input_values)) if i != 2)
-    if invalid:
-        st.error("⚠️ Invalid input: Please ensure a valid value.")
-    else:
-        try:
-            # 使用模型预测正类概率
-            probability = model.predict(input_array)[0]
+    try:
+        # 使用模型预测正类概率
+        probability = model.predict(input_array)[0]
 
-            # 显示预测结果
-            st.subheader("🎯 Prediction Result")
-            st.write(f"The predicted probability of AKI for this patient is: **{probability:.2%}**")
+        # 显示预测结果
+        st.subheader("🎯 Prediction Result")
+        st.write(f"The predicted probability of AKI for this patient is: **{probability:.2%}**")
 
-            # 解释提示
-            if probability > 0.8:
-                st.error("⚠️ High Risk: Immediate medical intervention is recommended!")
-            elif probability > 0.5:
-                st.warning("⚠️ Moderate Risk: Close monitoring is advised.")
-            else:
-                st.success("✅ Low Risk: No immediate action required.")
-        except Exception as e:
-            st.error(f"An error occurred during prediction: {e}")
+        # 解释提示
+        if probability > 0.8:
+            st.error("⚠️ High Risk: Immediate medical intervention is recommended!")
+        elif probability > 0.5:
+            st.warning("⚠️ Moderate Risk: Close monitoring is advised.")
+        else:
+            st.success("✅ Low Risk: No immediate action required.")
+    except Exception as e:
+        st.error(f"An error occurred during prediction: {e}")
