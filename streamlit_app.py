@@ -1,6 +1,7 @@
-import streamlit as st
+import os
 import pickle
 import numpy as np
+import streamlit as st
 
 # 设置页面布局
 st.set_page_config(
@@ -28,24 +29,30 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 设置标题
+# 标题
 st.title("🩺 AKI Probability Prediction")
 st.markdown("""
 Welcome to the Acute Kidney Injury Prediction Tool!  
 """)
 
-# 加载训练好的模型
+# ========== 模型加载 ==========
+# 动态获取脚本所在目录
+BASE_DIR = os.path.dirname(__file__)
+# 构造相对路径至模型文件
+MODEL_PATH = os.path.join(BASE_DIR, "lightgbm_model.pkl")
+
 @st.cache_resource
-def load_model(model_path):
-    with open(model_path, "rb") as file:
-        model = pickle.load(file)
+def load_model(path: str):
+    if not os.path.exists(path):
+        st.error(f"⚠️ 模型文件不存在：{path}")
+        st.stop()
+    with open(path, "rb") as f:
+        model = pickle.load(f)
     return model
 
-# 模型路径
-model_path = "D:/Python/project/CNN/mimic_proj/lightgbm_model.pkl"
-model = load_model(model_path)
+model = load_model(MODEL_PATH)
 
-# 定义输入特征及其合理范围（根据临床经验设定）
+# ========== 输入特征设定 ==========
 feature_specs = [
     ("Weight (kg)", 2.0, 300.0, 70.0),
     ("Length of Stay (days)", 1.0, 365.0, 5.0),
@@ -59,13 +66,10 @@ feature_specs = [
 # 主界面 - 输入框
 st.header("🔧 Input Patient's Clinical Features")
 st.write("Please fill in the following clinical measurements:")
-
-# 使用列布局来优化输入框的展示
 cols = st.columns(len(feature_specs))
 input_values = []
 for idx, (name, min_v, max_v, default) in enumerate(feature_specs):
     label = name.split("(")[0].strip()
-    # 区分整数和浮点数输入
     if isinstance(min_v, int) and isinstance(max_v, int):
         val = cols[idx].number_input(
             f"{label}",
@@ -87,7 +91,6 @@ for idx, (name, min_v, max_v, default) in enumerate(feature_specs):
         )
     input_values.append(val)
 
-# 转换为 NumPy 数组
 input_array = np.array(input_values).reshape(1, -1)
 
 # 主界面 - 预测按钮
@@ -100,14 +103,14 @@ if st.button("🚀 Predict"):
         st.error("⚠️ Invalid input: Please ensure a valid value.")
     else:
         try:
-            # 使用模型预测正类的概率
-            probability = model.predict(input_array)[0]  # LightGBM 返回正类概率
+            # 使用模型预测正类概率
+            probability = model.predict(input_array)[0]
 
             # 显示预测结果
             st.subheader("🎯 Prediction Result")
             st.write(f"The predicted probability of AKI for this patient is: **{probability:.2%}**")
 
-            # 结果解释
+            # 解释
             if probability > 0.8:
                 st.error("⚠️ High Risk: Immediate medical intervention is recommended!")
             elif probability > 0.5:
