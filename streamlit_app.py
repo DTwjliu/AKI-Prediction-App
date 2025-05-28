@@ -48,14 +48,15 @@ def load_model(path: str):
 model = load_model(MODEL_PATH)
 
 # ========== 输入特征设定 ==========
+# 设置合理的最小/最大值，除 SOFA Score 和 Ventilator 可为 0 外，其它均需大于下限
 feature_specs = [
-    ("Weight (kg)", 0.0, 300.0, 80),
-    ("Length of Stay (days)", 0.0, 365.0, 10),
-    ("SOFA Score", 0.0, 24.0, 2.0),
-    ("Platelet Count (10^9/L)", 0.0, 1000.0, 300),
-    ("Arterial BP Systolic (mmHg)", 0.0, 250.0, 100),
-    ("SpO2 (%)", 0.0, 100.0, 50),
-    ("Ventilator (0 = No, 1 = Yes)", 0, 1, 0),
+    ("Weight (kg)",                  30.0, 200.0, 80.0),  # 成人常见体重范围
+    ("Length of Stay (days)",         1.0, 365.0, 10.0), # 住院时长 1-365 天
+    ("SOFA Score",                    0.0,  24.0,  2.0),  # SOFA 评分 0-24
+    ("Platelet Count (10^9/L)",      50.0, 400.0, 300.0), # 血小板计数
+    ("Arterial BP Systolic (mmHg)",  70.0, 200.0, 100.0), # 收缩压
+    ("SpO2 (%)",                     70.0, 100.0,  95.0), # 血氧饱和度
+    ("Ventilator (0 = No, 1 = Yes)",   0,     1,     0),   # 通气依赖
 ]
 
 # 主界面 - 输入框
@@ -66,8 +67,8 @@ input_values = []
 
 for idx, (name, min_v, max_v, default) in enumerate(feature_specs):
     label = name.split("(")[0].strip()
-
-    is_integer_input = all(isinstance(x, int) and not isinstance(x, bool) for x in [min_v, max_v, default])
+    # 判断是否使用整数输入
+    is_integer_input = isinstance(min_v, int) and isinstance(max_v, int) and isinstance(default, int)
 
     if is_integer_input:
         val = cols[idx].number_input(
@@ -94,20 +95,27 @@ input_array = np.array(input_values).reshape(1, -1)
 
 # 主界面 - 预测按钮
 if st.button("🚀 Predict"):
-    try:
-        # 使用模型预测正类概率
-        probability = model.predict(input_array)[0]
+    # 验证输入：除 SOFA（索引 2）和 Ventilator（索引 6）外，其它指标不能为 0
+    invalid = any(
+        val == 0 for i, val in enumerate(input_values) if i not in [2, 6]
+    )
+    if invalid:
+        st.error("⚠️ 非法输入：除 SOFA 评分和通气依赖外，其他指标不能为 0，请重新填写。")
+    else:
+        try:
+            # 使用模型预测正类概率
+            probability = model.predict(input_array)[0]
 
-        # 显示预测结果
-        st.subheader("🎯 Prediction Result")
-        st.write(f"The predicted probability of AKI for this patient is: **{probability:.2%}**")
+            # 显示预测结果
+            st.subheader("🎯 Prediction Result")
+            st.write(f"The predicted probability of AKI for this patient is: **{probability:.2%}**")
 
-        # 解释提示
-        if probability > 0.8:
-            st.error("⚠️ High Risk: Immediate medical intervention is recommended!")
-        elif probability > 0.5:
-            st.warning("⚠️ Moderate Risk: Close monitoring is advised.")
-        else:
-            st.success("✅ Low Risk: No immediate action required.")
-    except Exception as e:
-        st.error(f"An error occurred during prediction: {e}")
+            # 解释提示
+            if probability > 0.8:
+                st.error("⚠️ High Risk: Immediate medical intervention is recommended!")
+            elif probability > 0.5:
+                st.warning("⚠️ Moderate Risk: Close monitoring is advised.")
+            else:
+                st.success("✅ Low Risk: No immediate action required.")
+        except Exception as e:
+            st.error(f"An error occurred during prediction: {e}")
