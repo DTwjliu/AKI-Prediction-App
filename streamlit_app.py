@@ -14,15 +14,14 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* 为页面主内容添加边框 */
     .stApp {
-        padding: 1rem;   /* 调整内边距 */
-        max-width: 90%;  /* 设置最大宽度 */
-        margin: auto;    /* 居中内容 */
-        border: 2px solid #4CAF50; /* 添加绿色边框 */
-        border-radius: 10px; /* 设置边框圆角 */
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
-        background-color: #f9f9f9; /* 添加背景色 */
+        padding: 1rem;
+        max-width: 90%;
+        margin: auto;
+        border: 2px solid #4CAF50;
+        border-radius: 10px;
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        background-color: #f9f9f9;
     }
     </style>
     """,
@@ -31,14 +30,10 @@ st.markdown(
 
 # 标题
 st.title("🩺 AKI Probability Prediction")
-st.markdown("""
-Welcome to the Acute Kidney Injury Prediction Tool!  
-""")
+st.markdown("Welcome to the Acute Kidney Injury Prediction Tool!")
 
 # ========== 模型加载 ==========
-# 动态获取脚本所在目录
 BASE_DIR = os.path.dirname(__file__)
-# 构造相对路径至模型文件
 MODEL_PATH = os.path.join(BASE_DIR, "lightgbm_model.pkl")
 
 @st.cache_resource
@@ -54,11 +49,11 @@ model = load_model(MODEL_PATH)
 
 # ========== 输入特征设定 ==========
 feature_specs = [
-    ("Weight (kg)", 30.0, 300.0, 30),
-    ("Length of Stay (days)", 1.0, 365.0, 1),
+    ("Weight (kg)", 30.0, 300.0, 0),
+    ("Length of Stay (days)", 1.0, 365.0, 0),
     ("SOFA Score", 0.0, 24.0, 0.0),
-    ("Platelet Count (10^9/L)", 1.0, 1000.0, 1),
-    ("Arterial BP Systolic (mmHg)", 50.0, 250.0, 50),
+    ("Platelet Count (10^9/L)", 1.0, 1000.0, 0),
+    ("Arterial BP Systolic (mmHg)", 50.0, 250.0, 0),
     ("SpO2 (%)", 50.0, 100.0, 50),
     ("Ventilator (0 = No, 1 = Yes)", 0, 1, 0),
 ]
@@ -68,24 +63,29 @@ st.header("🔧 Input Patient's Clinical Features")
 st.write("Please fill in the following clinical measurements:")
 cols = st.columns(len(feature_specs))
 input_values = []
+
 for idx, (name, min_v, max_v, default) in enumerate(feature_specs):
     label = name.split("(")[0].strip()
-    if isinstance(min_v, int) and isinstance(max_v, int):
+
+    # 判断是否为整数输入（排除布尔值）
+    is_integer_input = all(isinstance(x, int) and not isinstance(x, bool) for x in [min_v, max_v, default])
+
+    if is_integer_input:
         val = cols[idx].number_input(
             f"{label}",
-            min_value=min_v,
-            max_value=max_v,
-            value=default,
+            min_value=int(min_v),
+            max_value=int(max_v),
+            value=int(default),
             step=1,
             help=f"Enter {name}"
         )
     else:
         val = cols[idx].number_input(
             f"{label}",
-            min_value=min_v,
-            max_value=max_v,
-            value=default,
-            step=(max_v - min_v) / 100.0,
+            min_value=float(min_v),
+            max_value=float(max_v),
+            value=float(default),
+            step=(float(max_v) - float(min_v)) / 100.0,
             format="%.1f",
             help=f"Enter {name}"
         )
@@ -96,9 +96,7 @@ input_array = np.array(input_values).reshape(1, -1)
 # 主界面 - 预测按钮
 if st.button("🚀 Predict"):
     # 验证输入：除 SOFA Score 外，其他指标不能为 0
-    invalid = any(
-        input_values[i] == 0 for i in range(len(input_values)) if i != 2
-    )
+    invalid = any(input_values[i] == 0 for i in range(len(input_values)) if i != 2)
     if invalid:
         st.error("⚠️ Invalid input: Please ensure a valid value.")
     else:
@@ -110,7 +108,7 @@ if st.button("🚀 Predict"):
             st.subheader("🎯 Prediction Result")
             st.write(f"The predicted probability of AKI for this patient is: **{probability:.2%}**")
 
-            # 解释
+            # 解释提示
             if probability > 0.8:
                 st.error("⚠️ High Risk: Immediate medical intervention is recommended!")
             elif probability > 0.5:
