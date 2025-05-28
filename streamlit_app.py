@@ -1,18 +1,6 @@
 import streamlit as st
 import pickle
 import numpy as np
-import os, streamlit as st
-
-st.write("▶ 当前工作目录 os.getcwd():", os.getcwd())
-st.write("▶ 脚本所在目录 __file__:", os.path.dirname(__file__))
-
-model_path = r"D:/Python/project/CNN/mimic_proj/lightgbm_model.pkl"
-st.write("▶ 尝试打开的绝对路径：", model_path)
-st.write("▶ os.path.exists(model_path)?", os.path.exists(model_path))
-
-rel_path = os.path.join(os.path.dirname(__file__), "mimic_proj", "lightgbm_model.pkl")
-st.write("▶ 相对路径 model_path_rel：", rel_path)
-st.write("▶ os.path.exists(model_path_rel)?", os.path.exists(rel_path))
 
 # 设置页面布局
 st.set_page_config(
