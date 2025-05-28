@@ -49,11 +49,11 @@ model = load_model(MODEL_PATH)
 
 # ========== 输入特征设定 ==========
 feature_specs = [
-    ("Weight (kg)", 30.0, 300.0, 0),
-    ("Length of Stay (days)", 1.0, 365.0, 0),
-    ("SOFA Score", 0.0, 24.0, 0.0),
-    ("Platelet Count (10^9/L)", 1.0, 1000.0, 0),
-    ("Arterial BP Systolic (mmHg)", 50.0, 250.0, 0),
+    ("Weight (kg)", 30.0, 300.0, 80),
+    ("Length of Stay (days)", 1.0, 365.0, 10),
+    ("SOFA Score", 0.0, 24.0, 2.0),
+    ("Platelet Count (10^9/L)", 1.0, 1000.0, 300),
+    ("Arterial BP Systolic (mmHg)", 50.0, 250.0, 100),
     ("SpO2 (%)", 50.0, 100.0, 50),
     ("Ventilator (0 = No, 1 = Yes)", 0, 1, 0),
 ]
