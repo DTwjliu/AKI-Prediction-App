@@ -49,13 +49,13 @@ model = load_model(MODEL_PATH)
 
 # ========== Input Feature Settings ==========
 # Loose input limits for UI and strict clinical ranges for validation
-iinput_specs = [
-    ("Weight (kg)", 0.0, 300.0, 80.0),
-    ("Length of Stay (days)", 0.0, 365.0, 10.0),
-    ("SOFA Score", 0.0, 24.0, 2.0),
-    ("Platelet Count (10^9/L)", 0.0, 1000.0, 300.0),
-    ("Arterial BP Systolic (mmHg)", 0.0, 250.0, 100.0),
-    ("SpO2 (%)", 0.0, 100.0, 95.0),
+input_specs = [
+    ("Weight (kg)", 0.0, 300.0, 0.0),
+    ("Length of Stay (days)", 0.0, 365.0, 0.0),
+    ("SOFA Score", 0.0, 24.0, 0.0),
+    ("Platelet Count (10^9/L)", 0.0, 1000.0, 0.0),
+    ("Arterial BP Systolic (mmHg)", 0.0, 250.0, 0.0),
+    ("SpO2 (%)", 0.0, 100.0, 0.0),
     ("Ventilator (0 = No, 1 = Yes)", 0, 1, 0),
 ]
 clinical_ranges = [
@@ -71,10 +71,10 @@ clinical_ranges = [
 # Input section
 st.header("🔧 Input Patient's Clinical Features")
 st.write("Please enter the following clinical measurements:")
-cols = st.columns(len(iinput_specs))
+cols = st.columns(len(input_specs))
 input_values = []
 
-for idx, (name, min_ui, max_ui, default) in enumerate(iinput_specs):
+for idx, (name, min_ui, max_ui, default) in enumerate(input_specs):
     label = name.split("(")[0].strip()
     is_integer = isinstance(min_ui, int) and isinstance(max_ui, int) and isinstance(default, int)
     if is_integer:
