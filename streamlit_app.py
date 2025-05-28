@@ -67,6 +67,7 @@ input_values = []
 
 for idx, (name, min_v, max_v, default) in enumerate(feature_specs):
     label = name.split("(")[0].strip()
+    
     # 判断是否使用整数输入
     is_integer_input = isinstance(min_v, int) and isinstance(max_v, int) and isinstance(default, int)
 
@@ -96,11 +97,20 @@ input_array = np.array(input_values).reshape(1, -1)
 # 主界面 - 预测按钮
 if st.button("🚀 Predict"):
     # 验证输入：除 SOFA（索引 2）和 Ventilator（索引 6）外，其它指标不能为 0
-    invalid = any(
+    invalid_zero = any(
         val == 0 for i, val in enumerate(input_values) if i not in [2, 6]
     )
-    if invalid:
+    # 验证范围：所有指标都应在指定最小/最大值范围内
+    invalid_range = []
+    for i, val in enumerate(input_values):
+        name, min_v, max_v, _ = feature_specs[i]
+        if val < min_v or val > max_v:
+            invalid_range.append(f"{name}: {val} (范围 {min_v}-{max_v})")
+
+    if invalid_zero:
         st.error("⚠️ 非法输入：除 SOFA 评分和通气依赖外，其他指标不能为 0，请重新填写。")
+    elif invalid_range:
+        st.error("⚠️ 输入值超出范围：" + "; ".join(invalid_range))
     else:
         try:
             # 使用模型预测正类概率
