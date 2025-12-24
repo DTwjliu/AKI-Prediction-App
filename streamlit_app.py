@@ -56,27 +56,27 @@ model = load_model(MODEL_PATH)
 # clinical_ranges are used to validate values before prediction.
 input_specs = [
     ("Weight (kg)", 0.0, 300.0, 70.0),
-    ("Mean Urine Output (mL/kg/h)", 0.0, 20.0, 0.5),
-    ("SOFA Score", 0, 24, 0),
+    ("Urine Output (mL/h)", 0.0, 2000.0, 50.0),
+    ("SOFA", 0, 24, 0),
     ("Delta eGFR (mL/min/1.73m2)", -200.0, 200.0, 0.0),
     ("Diuretic Use (0 = No, 1 = Yes)", 0, 1, 0),
     ("Mechanical Ventilation (0 = No, 1 = Yes)", 0, 1, 0),
     ("Age (years)", 0, 120, 65),
     ("Maximum BUN (mg/dL)", 0.0, 300.0, 20.0),
-    ("APS III Score", 0, 300, 50),
+    ("APS III", 0, 300, 50),
     ("Delta BUN (mg/dL)", -200.0, 200.0, 0.0),
 ]
 
 clinical_ranges = [
     ("Weight (kg)", 30.0, 200.0),
-    ("Mean Urine Output (mL/kg/h)", 0.1, 10.0),
+    ("Urine Output (mL/h)", 10.0, 2000.0),
     ("SOFA Score", 0, 24),
     ("Delta eGFR (mL/min/1.73m2)", -120.0, 120.0),
     ("Diuretic Use (0 = No, 1 = Yes)", 0, 1),
     ("Mechanical Ventilation (0 = No, 1 = Yes)", 0, 1),
     ("Age (years)", 18, 120),
     ("Maximum BUN (mg/dL)", 5.0, 150.0),
-    ("APS III Score", 1, 200),
+    ("APS III", 1, 200),
     ("Delta BUN (mg/dL)", -100.0, 100.0),
 ]
 
