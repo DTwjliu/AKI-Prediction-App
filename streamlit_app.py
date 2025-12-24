@@ -20,19 +20,99 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    /* 全局背景 */
     .stApp {
-        padding: 1rem;
-        max-width: 90%;
+        padding: 1.5rem;
+        max-width: 92%;
         margin: auto;
-        border: 2px solid #4CAF50;
+        background: linear-gradient(135deg, #f8fbff 0%, #f4f9f4 100%);
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* 标题 */
+    h1 {
+        color: #1f4e79;
+        font-weight: 700;
+        margin-bottom: 0.3em;
+    }
+
+    /* 二级标题 */
+    h2, h3 {
+        color: #2c6e49;
+        font-weight: 600;
+    }
+
+    /* 输入区域卡片 */
+    section[data-testid="stVerticalBlock"] > div:has(> div.stColumns) {
+        background-color: #ffffff;
+        border-radius: 14px;
+        padding: 1.2rem 1.5rem 1.5rem 1.5rem;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    /* 输入框 */
+    input {
+        border-radius: 8px !important;
+        border: 1px solid #cfd8dc !important;
+        padding: 6px 10px !important;
+        transition: all 0.2s ease-in-out;
+    }
+
+    input:focus {
+        border-color: #4CAF50 !important;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.25) !important;
+    }
+
+    /* 按钮 */
+    button[kind="primary"] {
+        background: linear-gradient(135deg, #4CAF50, #43a047);
         border-radius: 10px;
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-        background-color: #f9f9f9;
+        font-weight: 600;
+        padding: 0.6rem 1.8rem;
+        border: none;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.35);
+        transition: all 0.2s ease-in-out;
+    }
+
+    button[kind="primary"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(76, 175, 80, 0.45);
+    }
+
+    /* 结果卡片 */
+    .result-card {
+        background-color: #ffffff;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-top: 1.2rem;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.10);
+        border-left: 6px solid #4CAF50;
+    }
+
+    /* 风险标签 */
+    .risk-high {
+        color: #b71c1c;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .risk-medium {
+        color: #ef6c00;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .risk-low {
+        color: #2e7d32;
+        font-weight: 700;
+        font-size: 1.1rem;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 # =================================================
 # Title
@@ -177,8 +257,19 @@ if st.button("🚀 Predict"):
             d_input = xgb.DMatrix(input_df)
             prob = model.predict(d_input)[0]
 
-            st.subheader("🎯 Prediction Result")
-            st.write(f"**Predicted AKI probability:** {prob:.2%}")
+            st.markdown(
+                f"""
+                <div class="result-card">
+                    <h3>🎯 Prediction Result</h3>
+                    <p style="font-size: 1.3rem;">
+                    Predicted AKI Probability:
+                    <strong>{prob:.2%}</strong>
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 
             if prob >= 0.8:
                 st.error("High Risk: Immediate medical intervention recommended.")
