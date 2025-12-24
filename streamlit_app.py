@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 import streamlit as st
-
+import xgboost as xgb   # ✅ 加这一行
 # Page configuration
 st.set_page_config(
     page_title="AKI Probability Prediction",
@@ -142,7 +142,8 @@ if st.button("🚀 Predict"):
         st.error("⚠️ Input out of range: " + "; ".join(invalid_entries))
     else:
         try:
-            prob = model.predict(input_array)[0]
+            dmatrix = xgb.DMatrix(input_array)
+            prob = model.predict(dmatrix)[0]
             st.subheader("🎯 Prediction Result")
             st.write(f"Predicted AKI probability: **{prob:.2%}**")
 
