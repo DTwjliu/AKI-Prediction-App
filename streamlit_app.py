@@ -1,16 +1,22 @@
 import os
 import pickle
-import numpy as np
 import streamlit as st
-import xgboost as xgb   # ✅ 加这一行
+import numpy as np
+import pandas as pd
+import xgboost as xgb
+
+# =================================================
 # Page configuration
+# =================================================
 st.set_page_config(
     page_title="AKI Probability Prediction",
     page_icon="🩺",
     layout="wide",
 )
 
-# Custom CSS for styling the app container
+# =================================================
+# Custom CSS
+# =================================================
 st.markdown(
     """
     <style>
@@ -28,11 +34,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# App title
+# =================================================
+# Title
+# =================================================
 st.title("🩺 AKI Probability Prediction")
 st.markdown("Welcome to the Acute Kidney Injury Prediction Tool!")
 
-# ========== Model Loading ==========
+# =================================================
+# Model Loading
+# =================================================
 BASE_DIR = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.pkl")
 
@@ -47,18 +57,30 @@ def load_model(path: str):
 
 model = load_model(MODEL_PATH)
 
-# ========== Input Feature Settings ==========
-# New feature list requested by user:
-# weight, mean urine output, SOFA score, Delta eGFR, diuretic use,
-# mechanical ventilation, age, maximum BUN, APS III score, Delta BUN
+# =================================================
+# ⚠️ 特征名（必须与训练时完全一致）
+# =================================================
+FEATURE_NAMES = [
+    "Mean Urine Output",
+    "Delta eGFR",
+    "Max BUN",
+    "Delta BUN",
+    "Ventilation",
+    "Diuretics",
+    "Age",
+    "Weight",
+    "APS III",
+    "SOFA"
+]
 
-# UI bounds (loose) and defaults are for convenience in the Streamlit widgets.
-# clinical_ranges are used to validate values before prediction.
+# =================================================
+# Input settings (UI 顺序可以随意)
+# =================================================
 input_specs = [
     ("Weight (kg)", 0.0, 300.0, 70.0),
     ("Urine Output (mL/h)", 0.0, 2000.0, 50.0),
     ("SOFA", 0, 24, 0),
-    ("Delta eGFR (mL/min/1.73m2)", -200.0, 200.0, 0.0),
+    ("Delta eGFR (mL/min/1.73m²)", -200.0, 200.0, 0.0),
     ("Diuretic Use (0 = No, 1 = Yes)", 0, 1, 0),
     ("Mechanical Ventilation (0 = No, 1 = Yes)", 0, 1, 0),
     ("Age (years)", 0, 120, 65),
@@ -70,27 +92,26 @@ input_specs = [
 clinical_ranges = [
     ("Weight (kg)", 30.0, 200.0),
     ("Urine Output (mL/h)", 10.0, 2000.0),
-    ("SOFA Score", 0, 24),
-    ("Delta eGFR (mL/min/1.73m2)", -120.0, 120.0),
-    ("Diuretic Use (0 = No, 1 = Yes)", 0, 1),
-    ("Mechanical Ventilation (0 = No, 1 = Yes)", 0, 1),
+    ("SOFA", 0, 24),
+    ("Delta eGFR", -120.0, 120.0),
+    ("Diuretic Use", 0, 1),
+    ("Mechanical Ventilation", 0, 1),
     ("Age (years)", 18, 120),
     ("Maximum BUN (mg/dL)", 5.0, 150.0),
     ("APS III", 1, 200),
-    ("Delta BUN (mg/dL)", -100.0, 100.0),
+    ("Delta BUN", -100.0, 100.0),
 ]
 
-# Input section
-st.header("🔧 Input Patient's Clinical Features")
-st.write("Please enter the following clinical measurements:")
+# =================================================
+# Input UI
+# =================================================
+st.header("🔧 Input Patient Clinical Features")
 cols = st.columns(len(input_specs))
 input_values = []
 
 for idx, (name, min_ui, max_ui, default) in enumerate(input_specs):
-    # Use the part before '(' for a shorter label in the UI
     label = name.split("(")[0].strip()
-    # Detect integer-like UI bounds & defaults to present integer inputs
-    is_integer = isinstance(min_ui, int) and isinstance(max_ui, int) and isinstance(default, int)
+    is_integer = isinstance(min_ui, int) and isinstance(max_ui, int)
 
     if is_integer:
         value = cols[idx].number_input(
@@ -98,38 +119,30 @@ for idx, (name, min_ui, max_ui, default) in enumerate(input_specs):
             min_value=int(min_ui),
             max_value=int(max_ui),
             value=int(default),
-            step=1,
-            help=f"Enter {name}"
+            step=1
         )
     else:
-        # default step: 0.1 for floats to allow fine-grained clinical input
-        step = (float(max_ui) - float(min_ui)) / 100.0
-        if step <= 0:
-            step = 0.1
         value = cols[idx].number_input(
             label,
             min_value=float(min_ui),
             max_value=float(max_ui),
             value=float(default),
-            step=step,
-            format="%.2f",
-            help=f"Enter {name}"
+            step=0.1,
+            format="%.2f"
         )
     input_values.append(value)
 
-input_array = np.array(input_values).reshape(1, -1)
-
-# Prediction button and validation
+# =================================================
+# Prediction
+# =================================================
 if st.button("🚀 Predict"):
-    # Define indices that are allowed to be zero (SOFA, Delta eGFR, Diuretic, Mechanical Vent, Delta BUN)
     zero_allowed_indices = [2, 3, 4, 5, 9]
 
-    # Zero-value validation (exclude indices in zero_allowed_indices)
     invalid_zero = any(
-        (val == 0) for i, val in enumerate(input_values) if i not in zero_allowed_indices
+        (val == 0) for i, val in enumerate(input_values)
+        if i not in zero_allowed_indices
     )
 
-    # Range validation
     invalid_entries = []
     for i, val in enumerate(input_values):
         name, min_cl, max_cl = clinical_ranges[i]
@@ -137,21 +150,42 @@ if st.button("🚀 Predict"):
             invalid_entries.append(f"{name}: {val} (allowed {min_cl}-{max_cl})")
 
     if invalid_zero:
-        st.error("⚠️ Invalid input: Except for SOFA Score, Delta eGFR, Diuretic Use, Mechanical Ventilation, and Delta BUN, all other values must be non-zero.")
+        st.error("⚠️ Invalid input: some values cannot be zero.")
     elif invalid_entries:
         st.error("⚠️ Input out of range: " + "; ".join(invalid_entries))
     else:
         try:
-            d_input = xgb.DMatrix(input_array)
-            prob = model.predict(d_input)[0]
-            st.subheader("🎯 Prediction Result")
-            st.write(f"Predicted AKI probability: **{prob:.2%}**")
+            # -------------------------------------------------
+            # 🚨 核心修复：用 DataFrame + 正确特征名
+            # -------------------------------------------------
+            input_df = pd.DataFrame(
+                [[
+                    input_values[1],  # Mean Urine Output
+                    input_values[3],  # Delta eGFR
+                    input_values[7],  # Max BUN
+                    input_values[9],  # Delta BUN
+                    input_values[5],  # Ventilation
+                    input_values[4],  # Diuretics
+                    input_values[6],  # Age
+                    input_values[0],  # Weight
+                    input_values[8],  # APS III
+                    input_values[2],  # SOFA
+                ]],
+                columns=FEATURE_NAMES
+            )
 
-            if prob > 0.8:
+            d_input = xgb.DMatrix(input_df)
+            prob = model.predict(d_input)[0]
+
+            st.subheader("🎯 Prediction Result")
+            st.write(f"**Predicted AKI probability:** {prob:.2%}")
+
+            if prob >= 0.8:
                 st.error("High Risk: Immediate medical intervention recommended.")
-            elif prob > 0.5:
+            elif prob >= 0.5:
                 st.warning("Moderate Risk: Close monitoring advised.")
             else:
                 st.success("Low Risk: No immediate action required.")
+
         except Exception as e:
             st.error(f"Prediction error: {e}")
