@@ -142,8 +142,7 @@ if st.button("🚀 Predict"):
         st.error("⚠️ Input out of range: " + "; ".join(invalid_entries))
     else:
         try:
-            dmatrix = xgb.DMatrix(input_array)
-            prob = model.predict(dmatrix)[0]
+            prob = model.predict(input_array)[0]
             st.subheader("🎯 Prediction Result")
             st.write(f"Predicted AKI probability: **{prob:.2%}**")
 
