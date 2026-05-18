@@ -38,7 +38,7 @@ def xgboost_output(feature_data, label_data):
 
     train_patients, val_patients = train_test_split(
         unique_patients,
-        test_size=0.2,
+        test_size=0.3,
         random_state=42
     )
 
@@ -67,19 +67,19 @@ def xgboost_output(feature_data, label_data):
     params = {
         'booster': 'gbtree',
         'objective': 'binary:logistic',
-        'gamma': 0.01,
-        'max_depth': 6,
-        'lambda': 1.0,
-        'alpha': 0.5,
-        'subsample': 0.8,
-        'colsample_bytree': 0.8,
-        'min_child_weight': 5,
-        'eta': 0.02,
+        'gamma': 0.1,  # 降低分裂阈值，允许更多对阳性样本有意义的分裂
+        'max_depth': 7,  # 保留树深度（适配样本量），无需调整
+        'lambda': 3,  # 大幅降低L2正则，释放对阳性样本的拟合能力
+        'alpha': 0.6,  # 降低L1正则，减少特征稀疏化带来的阳性样本信息丢失
+        'subsample': 0.8,  # 保留采样，维持泛化能力
+        'colsample_bytree': 0.8,  # 保留列采样
+        'min_child_weight': 3,  # 降低叶子节点权重阈值，捕捉阳性样本的小模式
+        'eta': 0.005,  # 学习率保留，可配合增加迭代次数（num_boost_round=200）
         'seed': 42,
-        'nthread': 3,
+        'nthread': 5,
         'eval_metric': 'auc',
-        # 类别不平衡处理（仅基于训练集）
-        'scale_pos_weight': sum(y_train == 0) / sum(y_train == 1)
+        # 关键新增：针对数据不平衡，给阳性样本加权
+        'scale_pos_weight': sum(y_train == 0) / sum(y_train == 1) # 自动计算正负样本权重比
     }
 
     # -----------------------------
@@ -90,10 +90,10 @@ def xgboost_output(feature_data, label_data):
     clf = xgb.train(
         params=params,
         dtrain=d_train,
-        num_boost_round=1000,
+        num_boost_round=2000,
         evals=evals,
         early_stopping_rounds=42,
-        verbose_eval=1
+        verbose_eval=10
     )
 
     # -----------------------------
@@ -144,8 +144,8 @@ def xgboost_output(feature_data, label_data):
 # 3. 主程序入口
 # -------------------------------------------------
 if __name__ == '__main__':
-    datafile = 'mimic_dataset/111_reduce.csv'
-    labelfile = 'mimic_dataset/222.csv'
+    datafile = 'mimic_dataset/mimiciv_datasheet_513_imp_x_d.csv'
+    labelfile = 'mimic_dataset/mimiciv_datasheet_513_imp_y_d.csv'
 
     feature_data, label_data = load_data(datafile, labelfile)
     xgboost_output(feature_data, label_data)
