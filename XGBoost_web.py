@@ -144,8 +144,8 @@ def xgboost_output(feature_data, label_data):
 # 3. 主程序入口
 # -------------------------------------------------
 if __name__ == '__main__':
-    datafile = 'mimic_dataset/mimiciv_datasheet_513_imp_x_d.csv'
-    labelfile = 'mimic_dataset/mimiciv_datasheet_513_imp_y_d.csv'
+    datafile = 'D:/Whu/env/Project/mimic_proj/mimic_tbmi/database/daxiuhuifu/mimiciv_datasheet_513_imp_x_d.csv'
+    labelfile = 'D:/Whu/env/Project/mimic_proj/mimic_tbmi/database/daxiuhuifu/mimiciv_datasheet_513_imp_y_d.csv'
 
     feature_data, label_data = load_data(datafile, labelfile)
     xgboost_output(feature_data, label_data)
