@@ -138,48 +138,48 @@ def load_model(path: str):
 model = load_model(MODEL_PATH)
 
 # =================================================
-# ⚠️ 特征名（必须与训练时完全一致）
+# ⚠️ 特征名
 # =================================================
 FEATURE_NAMES = [
+    "Delta WBC",
     "Mean Urine Output",
     "Delta eGFR",
+    "Delta Bicarbonate",
     "Max BUN",
-    "Delta BUN",
     "Ventilation",
     "Diuretics",
     "Age",
     "Weight",
-    "APS III",
     "SOFA"
 ]
 
 # =================================================
-# Input settings (UI 顺序可以随意)
+# Input settings (UI 顺序与特征完全对应)
 # =================================================
 input_specs = [
-    ("Weight (kg)", 0.0, 300.0, 70.0),
-    ("Urine Output (mL/h)", 0.0, 2000.0, 50.0),
-    ("SOFA", 0, 24, 0),
+    ("Delta WBC (10^9/L)", -20.0, 20.0, 0.0),
+    ("Mean Urine Output (mL/h)", 0.0, 2000.0, 50.0),
     ("Delta eGFR (mL/min/1.73m²)", -200.0, 200.0, 0.0),
-    ("Diuretic Use (0 = No, 1 = Yes)", 0, 1, 0),
+    ("Delta Bicarbonate (mmol/L)", -50.0, 50.0, 0.0),
+    ("Max BUN (mg/dL)", 0.0, 300.0, 20.0),
     ("Ventilation (0 = No, 1 = Yes)", 0, 1, 0),
+    ("Diuretic Use (0 = No, 1 = Yes)", 0, 1, 0),
     ("Age (years)", 0, 120, 65),
-    ("Maximum BUN (mg/dL)", 0.0, 300.0, 20.0),
-    ("APS III", 0, 300, 50),
-    ("Delta BUN (mg/dL)", -200.0, 200.0, 0.0),
+    ("Weight (kg)", 0.0, 300.0, 70.0),
+    ("SOFA", 0, 24, 0),
 ]
 
 clinical_ranges = [
-    ("Weight (kg)", 30.0, 200.0),
-    ("Urine Output (mL/h)", 10.0, 2000.0),
-    ("SOFA", 0, 24),
+    ("Delta WBC", -15.0, 15.0),
+    ("Mean Urine Output (mL/h)", 10.0, 2000.0),
     ("Delta eGFR", -120.0, 120.0),
-    ("Diuretic Use", 0, 1),
+    ("Delta Bicarbonate", -30.0, 30.0),
+    ("Max BUN (mg/dL)", 5.0, 150.0),
     ("Ventilation", 0, 1),
+    ("Diuretic Use", 0, 1),
     ("Age (years)", 18, 120),
-    ("Maximum BUN (mg/dL)", 5.0, 150.0),
-    ("APS III", 1, 200),
-    ("Delta BUN", -100.0, 100.0),
+    ("Weight (kg)", 30.0, 200.0),
+    ("SOFA", 0, 24),
 ]
 
 # =================================================
@@ -240,16 +240,16 @@ if st.button("🚀 Predict"):
             # -------------------------------------------------
             input_df = pd.DataFrame(
                 [[
+                    input_values[0],  # Delta WBC
                     input_values[1],  # Mean Urine Output
-                    input_values[3],  # Delta eGFR
-                    input_values[7],  # Max BUN
-                    input_values[9],  # Delta BUN
+                    input_values[2],  # Delta eGFR
+                    input_values[3],  # Delta Bicarbonate
+                    input_values[4],  # Max BUN
                     input_values[5],  # Ventilation
-                    input_values[4],  # Diuretics
-                    input_values[6],  # Age
-                    input_values[0],  # Weight
-                    input_values[8],  # APS III
-                    input_values[2],  # SOFA
+                    input_values[6],  # Diuretics
+                    input_values[7],  # Age
+                    input_values[8],  # Weight
+                    input_values[9],  # SOFA
                 ]],
                 columns=FEATURE_NAMES
             )
