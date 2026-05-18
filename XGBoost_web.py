@@ -99,7 +99,7 @@ def xgboost_output(feature_data, label_data):
     # -----------------------------
     # 2.5 保存模型
     # -----------------------------
-    with open('xgboost_patient_level.pkl', 'wb') as f:
+    with open('xgb_model.pkl', 'wb') as f:
         pickle.dump(clf, f)
 
     # -----------------------------
