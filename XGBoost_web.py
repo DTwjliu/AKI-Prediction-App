@@ -1,3 +1,29 @@
+import pandas as pd
+import xgboost as xgb
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score,
+    f1_score, roc_auc_score, roc_curve
+)
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')  # 或 'Qt5Agg'
+import pickle
+
+
+# -------------------------------------------------
+# 1. 数据加载
+# -------------------------------------------------
+def load_data(datafile, labelfile):
+    data = pd.read_csv(datafile)
+    label = pd.read_csv(labelfile)
+
+    feature_data = data.iloc[:, :]      # 第一列是 patient_id
+    label_data = label.iloc[:, :].values.ravel()
+
+    return feature_data, label_data
+
+
 # -------------------------------------------------
 # 2. XGBoost（patient-level split）
 # -------------------------------------------------
@@ -7,32 +33,6 @@ def xgboost_output(feature_data, label_data):
     # -----------------------------
     patient_ids = feature_data.iloc[:, 0]   # patient / subject / stay ID
     X_features = feature_data.iloc[:, 1:]   # 真正用于建模的特征
-
-    # =================================================
-    # 🚨 核心防错保护：强制统一特征名和顺序，与前端完全一致！
-    # =================================================
-    FRONTEND_FEATURES = [
-        "Delta WBC",
-        "Mean Urine Output",
-        "Delta eGFR",
-        "Delta Bicarbonate",
-        "Max BUN",
-        "Ventilation",
-        "Diuretics",
-        "Age",
-        "Weight",
-        "SOFA"
-    ]
-    
-    try:
-        # 强制按照前端所需的列名和顺序筛选数据
-        X_features = X_features[FRONTEND_FEATURES]
-    except KeyError as e:
-        # 如果报错，说明你 CSV 里的表头名字跟前端不一样（比如大小写不对，或者多/少了空格）
-        print(f"\n❌ 严重错误: CSV 文件中找不到对应的特征列！")
-        print(f"缺失的列名是: {e}")
-        print("请检查你的 CSV 表头是否与 FRONTEND_FEATURES 里的拼写和大小写完全一致！")
-        return  # 直接终止程序，不生成错误模型
 
     unique_patients = patient_ids.unique()
 
@@ -62,23 +62,24 @@ def xgboost_output(feature_data, label_data):
     d_val = xgb.DMatrix(X_val, label=y_val)
 
     # -----------------------------
-    # 2.3 参数设置
+    # 2.3 参数设置（你的版本）
     # -----------------------------
     params = {
         'booster': 'gbtree',
         'objective': 'binary:logistic',
-        'gamma': 0.1,  
-        'max_depth': 7,  
-        'lambda': 3,  
-        'alpha': 0.6,  
-        'subsample': 0.8,  
-        'colsample_bytree': 0.8,  
-        'min_child_weight': 3,  
-        'eta': 0.005,  
+        'gamma': 0.1,  # 降低分裂阈值，允许更多对阳性样本有意义的分裂
+        'max_depth': 7,  # 保留树深度（适配样本量），无需调整
+        'lambda': 3,  # 大幅降低L2正则，释放对阳性样本的拟合能力
+        'alpha': 0.6,  # 降低L1正则，减少特征稀疏化带来的阳性样本信息丢失
+        'subsample': 0.8,  # 保留采样，维持泛化能力
+        'colsample_bytree': 0.8,  # 保留列采样
+        'min_child_weight': 3,  # 降低叶子节点权重阈值，捕捉阳性样本的小模式
+        'eta': 0.005,  # 学习率保留，可配合增加迭代次数（num_boost_round=200）
         'seed': 42,
         'nthread': 5,
         'eval_metric': 'auc',
-        'scale_pos_weight': sum(y_train == 0) / sum(y_train == 1) 
+        # 关键新增：针对数据不平衡，给阳性样本加权
+        'scale_pos_weight': sum(y_train == 0) / sum(y_train == 1) # 自动计算正负样本权重比
     }
 
     # -----------------------------
@@ -98,11 +99,8 @@ def xgboost_output(feature_data, label_data):
     # -----------------------------
     # 2.5 保存模型
     # -----------------------------
-    # 🚨 修复：保存的文件名必须和网页读取的名字完全一样！
-    model_filename = 'xgboost_model.pkl'
-    with open(model_filename, 'wb') as f:
+    with open('xgboost_patient_level.pkl', 'wb') as f:
         pickle.dump(clf, f)
-    print(f"\n✅ 模型已成功保存为: {model_filename}，请将此文件与 streamlit_app.py 放在同一目录下。")
 
     # -----------------------------
     # 2.6 预测
@@ -140,3 +138,14 @@ def xgboost_output(feature_data, label_data):
     plt.legend(loc='lower right', fontsize=12)
     plt.grid()
     plt.show()
+
+
+# -------------------------------------------------
+# 3. 主程序入口
+# -------------------------------------------------
+if __name__ == '__main__':
+    datafile = 'mimic_dataset/mimiciv_datasheet_513_imp_x_d.csv'
+    labelfile = 'mimic_dataset/mimiciv_datasheet_513_imp_y_d.csv'
+
+    feature_data, label_data = load_data(datafile, labelfile)
+    xgboost_output(feature_data, label_data)
