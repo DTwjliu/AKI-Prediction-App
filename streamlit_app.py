@@ -216,7 +216,7 @@ for idx, (name, min_ui, max_ui, default) in enumerate(input_specs):
 # Prediction
 # =================================================
 if st.button("🚀 Predict"):
-    zero_allowed_indices = [2, 3, 5, 6, 9]
+    zero_allowed_indices = [0, 2, 3, 5, 6, 9]
 
     invalid_zero = any(
         (val == 0) for i, val in enumerate(input_values)
