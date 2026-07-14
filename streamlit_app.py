@@ -141,45 +141,45 @@ model = load_model(MODEL_PATH)
 # ⚠️ 特征名
 # =================================================
 FEATURE_NAMES = [
-    "Delta WBC",
+    "Weight",
     "Mean Urine Output",
-    "Delta eGFR",
-    "Delta Bicarbonate",
-    "Max BUN",
+    "SOFA",
     "Ventilation",
+    "Delta eGFR",
     "Diuretics",
     "Age",
-    "Weight",
-    "SOFA"
+    "Max BUN",
+    "Delta Bicarbonate",
+    "Delta WBC"
 ]
 
 # =================================================
 # Input settings (UI 顺序与特征完全对应)
 # =================================================
 input_specs = [
-    ("Delta WBC (10^9/L)", -20.0, 20.0, 0.0),
+    ("Weight (kg)", 0.0, 300.0, 70.0),
     ("Mean Urine Output (mL/h)", 0.0, 2000.0, 50.0),
-    ("Delta eGFR (mL/min/1.73m²)", -200.0, 200.0, 0.0),
-    ("Delta Bicarbonate (mmol/L)", -50.0, 50.0, 0.0),
-    ("Max BUN (mg/dL)", 0.0, 300.0, 20.0),
+    ("SOFA", 0, 24, 0),
     ("Ventilation (0 = No, 1 = Yes)", 0, 1, 0),
+    ("Delta eGFR (mL/min/1.73m²)", -200.0, 200.0, 0.0),
     ("Diuretic Use (0 = No, 1 = Yes)", 0, 1, 0),
     ("Age (years)", 0, 120, 65),
-    ("Weight (kg)", 0.0, 300.0, 70.0),
-    ("SOFA", 0, 24, 0),
+    ("Max BUN (mg/dL)", 0.0, 300.0, 20.0),
+    ("Delta Bicarbonate (mmol/L)", -50.0, 50.0, 0.0),
+    ("Delta WBC (10^9/L)", -20.0, 20.0, 0.0),
 ]
 
 clinical_ranges = [
-    ("Delta WBC", -15.0, 15.0),
+    ("Weight (kg)", 30.0, 200.0),
     ("Mean Urine Output (mL/h)", 10.0, 2000.0),
-    ("Delta eGFR", -120.0, 120.0),
-    ("Delta Bicarbonate", -30.0, 30.0),
-    ("Max BUN (mg/dL)", 5.0, 150.0),
+    ("SOFA", 0, 24),
     ("Ventilation", 0, 1),
+    ("Delta eGFR", -120.0, 120.0),
     ("Diuretic Use", 0, 1),
     ("Age (years)", 18, 120),
-    ("Weight (kg)", 30.0, 200.0),
-    ("SOFA", 0, 24),
+    ("Max BUN (mg/dL)", 5.0, 150.0),
+    ("Delta Bicarbonate", -30.0, 30.0),
+    ("Delta WBC", -15.0, 15.0),
 ]
 
 # =================================================
@@ -216,7 +216,7 @@ for idx, (name, min_ui, max_ui, default) in enumerate(input_specs):
 # Prediction
 # =================================================
 if st.button("🚀 Predict"):
-    zero_allowed_indices = [0, 2, 3, 5, 6, 9]
+    zero_allowed_indices = [2, 3, 4, 5, 8, 9]
 
     invalid_zero = any(
         (val == 0) for i, val in enumerate(input_values)
@@ -240,16 +240,16 @@ if st.button("🚀 Predict"):
             # -------------------------------------------------
             input_df = pd.DataFrame(
                 [[
-                    input_values[0],  # Delta WBC
+                    input_values[0],  # Weight
                     input_values[1],  # Mean Urine Output
-                    input_values[2],  # Delta eGFR
-                    input_values[3],  # Delta Bicarbonate
-                    input_values[4],  # Max BUN
-                    input_values[5],  # Ventilation
-                    input_values[6],  # Diuretics
-                    input_values[7],  # Age
-                    input_values[8],  # Weight
-                    input_values[9],  # SOFA
+                    input_values[2],  # SOFA
+                    input_values[3],  # Ventilation
+                    input_values[4],  # Delta eGFR
+                    input_values[5],  # Diuretics
+                    input_values[6],  # Age
+                    input_values[7],  # Max BUN
+                    input_values[8],  # Delta Bicarbonate
+                    input_values[9],  # Delta WBC
                 ]],
                 columns=FEATURE_NAMES
             )
